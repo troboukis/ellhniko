@@ -1,0 +1,48 @@
+name: Daily Data Update
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # 06:00 UTC every day (08:00 Athens summer / 09:00 winter)
+  workflow_dispatch:        # also allow triggering manually from the Actions tab
+
+permissions:
+  contents: write           # needed to commit & push updated CSVs
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests pandas python-dateutil pdfplumber
+
+      # Cache the PDF folder so we don't re-download 150+ files every day
+      - name: Cache downloaded PDFs
+        uses: actions/cache@v4
+        with:
+          path: documents/oik_adeies
+          key: pdfs-${{ runner.os }}-${{ hashFiles('oikodomikes_adeies.csv') }}
+          restore-keys: |
+            pdfs-${{ runner.os }}-
+
+      - name: Run data update
+        run: python update_data.py
+
+      - name: Commit and push updated files
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ellhniko_all.csv oikodomikes_adeies.csv oikopeda.csv permits_ellhniko.csv map.html
+          # Only commit when there are actual changes
+          git diff --cached --quiet \
+            && echo "No changes — skipping commit." \
+            || git commit -m "data: auto-update $(date +%Y-%m-%d)"
+          git push
