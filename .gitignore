@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+tempCodeRunnerFile.ipynb
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
+
+# Misc
+documents/
+lambda/
