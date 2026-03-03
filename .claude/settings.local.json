@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:docs.google.com)",
+      "WebFetch(domain:doc-08-b8-sheets.googleusercontent.com)",
+      "Bash(python3:*)"
+    ]
+  }
+}
