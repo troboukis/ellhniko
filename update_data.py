@@ -7,6 +7,7 @@ import time
 from datetime import date, datetime
 from dateutil.relativedelta import relativedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 # --- Configuration ---
 DIAVGEIA_API_BASE = "https://diavgeia.gov.gr/luminapi/api/search/export"
@@ -18,6 +19,7 @@ ADEIES_CSV = "oikodomikes_adeies.csv"
 OIKOPEDA_CSV = "oikopeda.csv"
 PERMITS_CSV = "permits_ellhniko.csv"
 PDF_DIR = "documents/oik_adeies"
+DISPLAY_TZ = ZoneInfo("Europe/Athens")
 
 
 # ---------------------------------------------------------------------------
@@ -247,8 +249,25 @@ def save_csv(df: pd.DataFrame, path: str, label: str):
     print(f"  Saved {path}: {len(df)} records ({label})")
 
 
+def stamp_last_update(search_ts: datetime):
+    map_html = Path("map.html")
+    if not map_html.exists():
+        return
+
+    label = search_ts.astimezone(DISPLAY_TZ).strftime("%Y-%m-%d %H:%M %Z")
+    html = map_html.read_text(encoding="utf-8")
+    html = re.sub(
+        r'(const LAST_UPDATE = ")[^"]*(")',
+        rf'\g<1>{label}\g<2>',
+        html,
+    )
+    map_html.write_text(html, encoding="utf-8")
+    print(f"\n  map.html LAST_UPDATE set to {label}")
+
+
 def main():
     today = date.today()
+    search_started_at = datetime.now(DISPLAY_TZ)
 
     # --- 1. Fetch new API data ---
     last_date = get_last_date(ALL_CSV)
@@ -287,6 +306,7 @@ def main():
     print(f"\n=== Downloading new PDFs ===")
     if not os.path.exists(ADEIES_CSV):
         print("  No oikodomikes_adeies.csv found — skipping PDF step.")
+        stamp_last_update(search_started_at)
         return
 
     adeies_df = pd.read_csv(ADEIES_CSV, dtype=str)
@@ -314,17 +334,8 @@ def main():
 
             save_csv(combined_permits, PERMITS_CSV, "parsed permits")
 
-    # --- 4. Stamp last-update date in map.html ---
-    map_html = Path("map.html")
-    if map_html.exists():
-        html = map_html.read_text(encoding="utf-8")
-        html = re.sub(
-            r'(const LAST_UPDATE = ")[^"]*(")',
-            rf'\g<1>{today}\g<2>',
-            html,
-        )
-        map_html.write_text(html, encoding="utf-8")
-        print(f"\n  map.html LAST_UPDATE set to {today}")
+    # --- 4. Stamp last-search timestamp in map.html ---
+    stamp_last_update(search_started_at)
 
     print("\nDone.")
 
