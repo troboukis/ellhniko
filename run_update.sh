@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-LAMBDA_DIR="$(dirname "$0")"
+LAMBDA_DIR="$(cd "$(dirname "$0")" && pwd)"
 SITE_DIR="/Users/troboukis/Code/troboukis.github.io"
 SITE_TARGET="$SITE_DIR/elliniko"
 
@@ -29,15 +29,15 @@ else
 fi
 
 echo ""
-echo "=== Copying map.html to site ==="
-mkdir -p "$SITE_TARGET"
-cp map.html "$SITE_TARGET/map.html"
-echo "  Copied to $SITE_TARGET/map.html"
-
-echo ""
-echo "=== Updating site repo ==="
+echo "=== Updating site repo (pull) ==="
 cd "$SITE_DIR"
 git pull
+
+echo ""
+echo "=== Copying map.html to site ==="
+mkdir -p "$SITE_TARGET"
+cp "$LAMBDA_DIR/map.html" "$SITE_TARGET/map.html"
+echo "  Copied to $SITE_TARGET/map.html"
 
 git add elliniko/map.html
 
