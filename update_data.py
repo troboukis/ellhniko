@@ -69,7 +69,11 @@ def get_last_date(csv_path: str) -> date:
         df = pd.read_csv(csv_path, usecols=lambda c: c in ("issueDate", "submissionTimestamp"))
         for col in ("issueDate", "submissionTimestamp"):
             if col in df.columns:
-                latest = pd.to_datetime(df[col], errors="coerce").max()
+                latest = pd.to_datetime(
+                    df[col],
+                    format="%d/%m/%Y %H:%M:%S",
+                    errors="coerce",
+                ).max()
                 if pd.notna(latest):
                     return latest.date()
     except Exception as e:
