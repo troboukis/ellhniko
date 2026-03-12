@@ -14,7 +14,7 @@ if ! git diff --quiet || ! git diff --cached --quiet || [[ -n "$(git ls-files --
 fi
 
 echo "=== Pulling latest changes ==="
-git pull --rebase
+git pull --no-rebase -X ours
 
 echo ""
 echo "=== Running data update ==="
