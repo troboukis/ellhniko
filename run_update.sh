@@ -7,8 +7,14 @@ SITE_TARGET="$SITE_DIR/elliniko"
 
 cd "$LAMBDA_DIR"
 
+if ! git diff --quiet || ! git diff --cached --quiet || [[ -n "$(git ls-files --others --exclude-standard)" ]]; then
+  echo "=== Saving local changes before pull ==="
+  git add -A
+  git commit -m "chore: save local changes $(date +%Y-%m-%d-%H%M%S)"
+fi
+
 echo "=== Pulling latest changes ==="
-git pull
+git pull --rebase
 
 echo ""
 echo "=== Running data update ==="
@@ -16,7 +22,7 @@ python update_data.py
 
 echo ""
 echo "=== Committing changes (lambda) ==="
-git add ellhniko_all.csv oikodomikes_adeies.csv oikopeda.csv permits_ellhniko.csv map.html
+git add ellhniko_all.csv oikodomikes_adeies.csv oikopeda.csv permits_ellhniko.csv last_search.json map.html
 
 if git diff --cached --quiet; then
   echo "No changes to commit."
