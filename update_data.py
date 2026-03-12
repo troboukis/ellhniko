@@ -4,6 +4,7 @@ import pdfplumber
 import os
 import re
 import time
+import json
 from datetime import date, datetime
 from dateutil.relativedelta import relativedelta
 from pathlib import Path
@@ -18,6 +19,7 @@ ALL_CSV = "ellhniko_all.csv"
 ADEIES_CSV = "oikodomikes_adeies.csv"
 OIKOPEDA_CSV = "oikopeda.csv"
 PERMITS_CSV = "permits_ellhniko.csv"
+LAST_SEARCH_JSON = "last_search.json"
 PDF_DIR = "documents/oik_adeies"
 DISPLAY_TZ = ZoneInfo("Europe/Athens")
 
@@ -249,20 +251,17 @@ def save_csv(df: pd.DataFrame, path: str, label: str):
     print(f"  Saved {path}: {len(df)} records ({label})")
 
 
-def stamp_last_update(search_ts: datetime):
-    map_html = Path("map.html")
-    if not map_html.exists():
-        return
-
-    label = search_ts.astimezone(DISPLAY_TZ).strftime("%Y-%m-%d %H:%M %Z")
-    html = map_html.read_text(encoding="utf-8")
-    html = re.sub(
-        r'(const LAST_UPDATE = ")[^"]*(")',
-        rf'\g<1>{label}\g<2>',
-        html,
+def write_last_search_metadata(search_ts: datetime):
+    timestamp = search_ts.astimezone(DISPLAY_TZ)
+    payload = {
+        "last_search_at": timestamp.isoformat(),
+        "display": timestamp.strftime("%Y-%m-%d %H:%M %Z"),
+    }
+    Path(LAST_SEARCH_JSON).write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
     )
-    map_html.write_text(html, encoding="utf-8")
-    print(f"\n  map.html LAST_UPDATE set to {label}")
+    print(f"\n  {LAST_SEARCH_JSON} set to {payload['display']}")
 
 
 def main():
@@ -306,7 +305,7 @@ def main():
     print(f"\n=== Downloading new PDFs ===")
     if not os.path.exists(ADEIES_CSV):
         print("  No oikodomikes_adeies.csv found — skipping PDF step.")
-        stamp_last_update(search_started_at)
+        write_last_search_metadata(search_started_at)
         return
 
     adeies_df = pd.read_csv(ADEIES_CSV, dtype=str)
@@ -334,8 +333,8 @@ def main():
 
             save_csv(combined_permits, PERMITS_CSV, "parsed permits")
 
-    # --- 4. Stamp last-search timestamp in map.html ---
-    stamp_last_update(search_started_at)
+    # --- 4. Write last-search timestamp metadata ---
+    write_last_search_metadata(search_started_at)
 
     print("\nDone.")
 
