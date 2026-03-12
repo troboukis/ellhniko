@@ -14,7 +14,7 @@ if ! git diff --quiet || ! git diff --cached --quiet || [[ -n "$(git ls-files --
 fi
 
 echo "=== Pulling latest changes ==="
-git pull --no-rebase -X ours
+git pull --no-rebase -X ours --no-edit
 
 echo ""
 echo "=== Running data update ==="
@@ -37,7 +37,7 @@ fi
 echo ""
 echo "=== Updating site repo (pull) ==="
 cd "$SITE_DIR"
-git pull
+git pull --no-edit
 
 echo ""
 echo "=== Copying map.html to site ==="
